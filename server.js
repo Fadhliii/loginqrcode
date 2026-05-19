@@ -192,6 +192,8 @@ const server = http.createServer((req, res) => {
   let pathname = url.pathname;
   if (pathname === '/') {
     pathname = '/index.html';
+  } else if (pathname === '/style.css' || pathname === '/admin.js' || pathname === '/student.js') {
+    pathname = '/public' + pathname;
   }
   const filePath = path.join(__dirname, pathname);
 
