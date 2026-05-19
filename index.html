@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Sistem Absensi Digital - Absen dengan scan QR Code, validasi lokasi, dan anti-joki">
+  <meta name="theme-color" content="#0c1020">
+  <title>Absensi Digital</title>
+  <link rel="stylesheet" href="/public/style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- ========== HEADER ========== -->
+  <header class="app-header">
+    <h1>📋 Absensi Digital</h1>
+    <p class="subtitle" id="school-name-label">Sistem Absensi Otomatis</p>
+  </header>
+
+  <!-- ========================================================
+       ADMIN PANEL
+       ======================================================== -->
+  <div id="admin-panel" class="hidden">
+
+    <!-- QR Code -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📱</span> QR Code Absensi</div>
+      <div class="qr-container">
+        <div class="qr-wrapper">
+          <div id="qrcode"></div>
+        </div>
+        <p class="qr-label">Siswa scan QR ini untuk absen</p>
+        <button id="btn-download-qr" class="btn btn-outline">
+          ⬇️ Download QR (PNG)
+        </button>
+      </div>
+    </div>
+
+    <!-- Jadwal Sesi -->
+    <div class="card">
+      <div class="card-title"><span class="icon">🕐</span> Jadwal Sesi Absen</div>
+      <div class="inline-row" style="margin-bottom:12px">
+        <div class="form-group">
+          <label class="form-label">Jam Mulai</label>
+          <input type="time" id="session-start" class="form-input">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jam Selesai</label>
+          <input type="time" id="session-end" class="form-input">
+        </div>
+        <button id="btn-add-session" class="btn btn-primary" style="height:46px;margin-bottom:0;flex-shrink:0">
+          + Tambah
+        </button>
+      </div>
+      <div id="session-list" class="session-list">
+        <div class="empty-state"><p>Memuat jadwal...</p></div>
+      </div>
+    </div>
+
+    <!-- Radius Setting -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📍</span> Radius Geolokasi</div>
+      <div class="inline-row">
+        <div class="form-group">
+          <label class="form-label">Radius (meter)</label>
+          <select id="radius-select" class="form-select">
+            <option value="50">50 meter</option>
+            <option value="100">100 meter</option>
+            <option value="200" selected>200 meter</option>
+          </select>
+        </div>
+        <button id="btn-save-radius" class="btn btn-primary" style="height:46px;flex-shrink:0">
+          💾 Simpan
+        </button>
+      </div>
+      <span id="radius-msg" style="display:inline-block;margin-top:8px"></span>
+    </div>
+
+    <!-- Daftar Absen Hari Ini -->
+    <div class="card">
+      <div class="card-title" style="justify-content:space-between">
+        <span><span class="icon">📊</span> Absensi Hari Ini
+          <span id="attendance-count" class="badge badge-success" style="margin-left:6px">0</span>
+        </span>
+        <button id="btn-refresh" class="btn btn-outline" style="padding:6px 12px;font-size:0.75rem">
+          🔄 Refresh
+        </button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="attendance-table">
+          <thead>
+            <tr>
+              <th>Nama</th>
+              <th>Jam</th>
+              <th>Lokasi</th>
+              <th>Sesi</th>
+            </tr>
+          </thead>
+          <tbody id="attendance-body">
+            <tr>
+              <td colspan="4">
+                <div class="skeleton" style="width:100%;height:32px"></div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ========================================================
+       STUDENT PANEL
+       ======================================================== -->
+  <div id="student-panel" class="hidden">
+
+    <!-- Status Sesi -->
+    <div class="card">
+      <div class="card-title"><span class="icon">📡</span> Status Absensi</div>
+      <div id="session-message">
+        <div class="alert alert-info">
+          <div class="spinner"></div> Memeriksa sesi absen...
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Absensi -->
+    <div id="attendance-form" class="card hidden">
+      <div class="card-title"><span class="icon">✏️</span> Form Absensi</div>
+
+      <!-- Geo Status -->
+      <div id="geo-status" class="geo-status alert-info">
+        <div id="geo-dot" class="geo-dot loading"></div>
+        <span id="geo-text">Mendeteksi lokasi...</span>
+      </div>
+
+      <form id="form-absen" autocomplete="off">
+        <div class="form-group">
+          <label class="form-label" for="input-nama">Nama Lengkap</label>
+          <input type="text" id="input-nama" class="form-input"
+                 placeholder="Masukkan nama lengkap" required minlength="3" maxlength="100">
+        </div>
+        <button type="submit" id="btn-submit" class="btn btn-primary btn-block" disabled>
+          📝 Submit Absensi
+        </button>
+      </form>
+
+    </div>
+
+    <!-- Panel Sukses -->
+    <div id="success-panel" class="card hidden" style="text-align: center; padding: 40px 24px;">
+      <div style="font-size: 4.5rem; margin-bottom: 16px; line-height: 1;">✅</div>
+      <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: #10b981;">Absensi Berhasil Dicatat</h2>
+      <div style="background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: var(--radius-md); padding: 16px; margin: 20px 0; text-align: left;">
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">Nama Lengkap:</p>
+        <p id="success-nama" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); margin-bottom: 12px;"></p>
+        <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 4px;">Jam Absen:</p>
+        <p id="success-jam" style="font-size: 1.1rem; font-weight: 700; color: var(--text-primary); font-variant-numeric: tabular-nums;"></p>
+      </div>
+      <p style="color: var(--text-muted); font-size: 0.9rem;">Terima kasih, data Anda sudah aman tersimpan.</p>
+    </div>
+
+    <!-- Panel Gagal -->
+    <div id="failure-panel" class="card hidden" style="text-align: center; padding: 40px 24px;">
+      <div style="font-size: 4.5rem; margin-bottom: 16px; line-height: 1;">❌</div>
+      <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 8px; color: #ef4444;">Absensi Gagal</h2>
+      <div class="alert alert-danger" id="failure-message" style="margin: 20px 0; text-align: left;"></div>
+      <button id="btn-try-again" class="btn btn-outline btn-block" style="margin-top: 10px;">
+        🔄 Coba Lagi
+      </button>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- ========== SCRIPTS ========== -->
+<script src="/public/admin.js"></script>
+<script src="/public/student.js"></script>
+<script>
+  /**
+   * Router: tentukan halaman berdasarkan query parameter
+   * /?adminkey=xxx → Admin panel
+   * / → Student panel (default, via scan QR)
+   */
+  document.addEventListener('DOMContentLoaded', function() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('adminkey') && params.get('adminkey')) {
+      window.initAdmin();
+    } else {
+      window.initStudent();
+    }
+  });
+</script>
+
+</body>
+</html>

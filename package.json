@@ -1,0 +1,13 @@
+{
+  "name": "absensi-sekolah",
+  "version": "1.0.0",
+  "description": "Aplikasi absensi sekolah dengan Google Sheets & Vercel KV",
+  "private": true,
+  "scripts": {
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "googleapis": "^134.0.0",
+    "@vercel/kv": "^2.0.0"
+  }
+}
