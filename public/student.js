@@ -31,12 +31,12 @@ function checkGeolocation() {
   const geoStatus = document.getElementById('geo-status');
   geoDot.className = 'geo-dot loading';
   geoText.textContent = 'Mendeteksi lokasi...';
-  geoStatus.className = 'geo-status alert-info';
+  geoStatus.className = 'status-box alert-info';
 
   if (!navigator.geolocation) {
     geoDot.className = 'geo-dot inactive';
     geoText.textContent = 'Browser tidak mendukung geolokasi';
-    geoStatus.className = 'geo-status alert-danger';
+    geoStatus.className = 'status-box alert-danger';
     return;
   }
   navigator.geolocation.getCurrentPosition(
@@ -46,13 +46,13 @@ function checkGeolocation() {
       studentState.geoReady = true;
       geoDot.className = 'geo-dot active';
       geoText.textContent = 'Lokasi terdeteksi ✓';
-      geoStatus.className = 'geo-status alert-success';
+      geoStatus.className = 'status-box alert-success';
       updateSubmitButton();
     },
     () => {
       geoDot.className = 'geo-dot inactive';
       geoText.textContent = 'Gagal mendeteksi lokasi. Aktifkan GPS Anda.';
-      geoStatus.className = 'geo-status alert-danger';
+      geoStatus.className = 'status-box alert-danger';
       studentState.geoReady = false;
       updateSubmitButton();
     },
@@ -67,22 +67,26 @@ async function checkSession() {
   try {
     const json = await (await fetch('/api/validate-session')).json();
     if (!json.success) {
-      msgEl.innerHTML = `<div class="alert alert-danger">⚠️ ${json.error}</div>`;
+      msgEl.className = 'status-box alert-danger';
+      msgEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg><span>${json.error}</span>`;
       formEl.classList.add('hidden');
       return;
     }
     if (json.data.active) {
       studentState.sessionActive = true;
-      msgEl.innerHTML = `<div class="alert alert-success">✅ ${json.data.message}</div>`;
+      msgEl.className = 'status-box alert-success';
+      msgEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg><span>${json.data.message}</span>`;
       formEl.classList.remove('hidden');
       checkGeolocation();
     } else {
       studentState.sessionActive = false;
-      msgEl.innerHTML = `<div class="alert alert-warning">🕐 ${json.data.message}</div>`;
+      msgEl.className = 'status-box alert-warning';
+      msgEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clock"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>${json.data.message}</span>`;
       formEl.classList.add('hidden');
     }
   } catch (err) {
-    msgEl.innerHTML = '<div class="alert alert-danger">⚠️ Gagal menghubungi server</div>';
+    msgEl.className = 'status-box alert-danger';
+    msgEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-wifi-off"><line x1="2" y1="2" x2="22" y2="22"/><path d="M8.5 16.5a5 5 0 0 1 7 0"/><path d="M2 8.82a15 15 0 0 1 4.17-2.65"/><path d="M10.66 5c4.01-.36 8.14.9 11.34 3.82"/></svg><span>Gagal menghubungi server</span>`;
     formEl.classList.add('hidden');
   }
 }
@@ -135,8 +139,6 @@ async function submitAttendance(e) {
 
 /** Inisialisasi halaman siswa */
 async function initStudent() {
-  document.getElementById('student-panel').classList.remove('hidden');
-  document.getElementById('admin-panel').classList.add('hidden');
   studentState.fingerprint = await generateFingerprint();
   await checkSession();
 
@@ -152,7 +154,7 @@ async function initStudent() {
       const btn = document.getElementById('btn-submit');
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '📝 Submit Absensi';
+        btn.innerHTML = 'Submit Absensi';
       }
     });
   }

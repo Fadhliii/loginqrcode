@@ -152,8 +152,6 @@ async function loadTodayAttendance() {
 /** Inisialisasi halaman admin */
 function initAdmin() {
   getAdminKey();
-  document.getElementById('admin-panel').classList.remove('hidden');
-  document.getElementById('student-panel').classList.add('hidden');
   initQRCode();
   loadSchedule();
   loadTodayAttendance();
