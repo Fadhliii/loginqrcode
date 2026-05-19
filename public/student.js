@@ -22,41 +22,82 @@ async function generateFingerprint() {
 }
 
 /* State */
-let studentState = { fingerprint: '', lat: null, lng: null, sessionActive: false, geoReady: false };
+let studentState = { 
+  fingerprint: '', lat: null, lng: null, sessionActive: false, geoReady: false,
+  schoolLat: -6.2984798916658065, schoolLng: 107.10119071620488, radius: 200
+};
+
+/** Fungsi hitung jarak (Haversine Formula) */
+function hitungJarak(lat1, lon1, lat2, lon2) {
+  const R = 6371e3;
+  const p1 = lat1 * Math.PI/180;
+  const p2 = lat2 * Math.PI/180;
+  const dp = (lat2-lat1) * Math.PI/180;
+  const dl = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+  return R * c;
+}
 
 /** Minta izin dan dapatkan koordinat GPS */
 function checkGeolocation() {
   const geoDot = document.getElementById('geo-dot');
   const geoText = document.getElementById('geo-text');
   const geoStatus = document.getElementById('geo-status');
+  
+  // Step 1: tampilkan pesan sebelum minta GPS
   geoDot.className = 'geo-dot loading';
-  geoText.textContent = 'Mendeteksi lokasi...';
+  geoText.textContent = '📍 Mendeteksi lokasi kamu...';
   geoStatus.className = 'status-box alert-info';
 
+  // Step 2: cek support
   if (!navigator.geolocation) {
     geoDot.className = 'geo-dot inactive';
-    geoText.textContent = 'Browser tidak mendukung geolokasi';
+    geoText.textContent = '❌ Browser kamu tidak mendukung GPS';
     geoStatus.className = 'status-box alert-danger';
     return;
   }
+
+  // Step 3: minta izin & ambil lokasi
   navigator.geolocation.getCurrentPosition(
     (pos) => {
       studentState.lat = pos.coords.latitude;
       studentState.lng = pos.coords.longitude;
-      studentState.geoReady = true;
-      geoDot.className = 'geo-dot active';
-      geoText.textContent = 'Lokasi terdeteksi ✓';
-      geoStatus.className = 'status-box alert-success';
+      
+      const jarak = hitungJarak(
+        studentState.lat,
+        studentState.lng,
+        studentState.schoolLat,
+        studentState.schoolLng
+      );
+
+      if (jarak <= studentState.radius) {
+        studentState.geoReady = true;
+        geoDot.className = 'geo-dot active';
+        geoText.textContent = 'Lokasi terdeteksi ✓';
+        geoStatus.className = 'status-box alert-success';
+      } else {
+        studentState.geoReady = false;
+        geoDot.className = 'geo-dot inactive';
+        geoText.textContent = '❌ Kamu di luar radius sekolah. Jarak: ' + Math.round(jarak) + ' meter';
+        geoStatus.className = 'status-box alert-danger';
+      }
       updateSubmitButton();
     },
-    () => {
-      geoDot.className = 'geo-dot inactive';
-      geoText.textContent = 'Gagal mendeteksi lokasi. Aktifkan GPS Anda.';
-      geoStatus.className = 'status-box alert-danger';
+    (error) => {
       studentState.geoReady = false;
+      geoDot.className = 'geo-dot inactive';
+      geoStatus.className = 'status-box alert-danger';
+      
+      switch(error.code) {
+        case 1: geoText.textContent = '❌ Izin lokasi ditolak. Buka pengaturan browser dan izinkan akses lokasi.'; break;
+        case 2: geoText.textContent = '❌ Lokasi tidak terdeteksi. Pastikan GPS aktif.'; break;
+        case 3: geoText.textContent = '❌ Timeout. Coba refresh halaman.'; break;
+        default: geoText.textContent = '❌ Gagal mendeteksi lokasi.'; break;
+      }
       updateSubmitButton();
     },
-    { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
   );
 }
 
@@ -74,6 +115,11 @@ async function checkSession() {
     }
     if (json.data.active) {
       studentState.sessionActive = true;
+      // Coba ambil variabel lingkungan dari API jika tersedia, jika tidak gunakan fallback hardcode default
+      studentState.schoolLat = json.data.schoolLat || -6.2984798916658065;
+      studentState.schoolLng = json.data.schoolLng || 107.10119071620488;
+      studentState.radius = json.data.radius || 200;
+
       msgEl.className = 'status-box alert-success';
       msgEl.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-circle-2"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg><span>${json.data.message}</span>`;
       formEl.classList.remove('hidden');

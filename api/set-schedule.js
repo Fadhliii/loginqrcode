@@ -39,8 +39,12 @@ module.exports = async function handler(req, res) {
           error: 'Setiap sesi harus memiliki start dan end (format HH:MM)',
         });
       }
+      // Pastikan format jam tidak ada spasi (Kemungkinan 2)
+      s.start = s.start.trim();
+      s.end = s.end.trim();
     }
 
+    console.log("Jadwal disimpan:", JSON.stringify(sessions));
     console.log('[set-schedule] Saving to KV:', JSON.stringify(sessions));
     await setSchedule(sessions);
     console.log('[set-schedule] Save SUCCESS');

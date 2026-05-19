@@ -14,6 +14,8 @@ module.exports = async function handler(req, res) {
     const serverUTC = new Date().toISOString();
 
     /* Debug logging untuk Vercel Logs */
+    console.log("Jadwal dari KV:", JSON.stringify(schedule));
+    console.log("Jam sekarang WIB:", now);
     console.log('[validate-session] DEBUG:', JSON.stringify({
       serverUTC,
       nowWIB: now,
@@ -50,9 +52,9 @@ module.exports = async function handler(req, res) {
 
     /* Tentukan pesan berdasarkan posisi waktu terhadap jadwal */
     let message = 'Tidak ada jadwal sesi absen hari ini';
-    if (schedule.length > 0) {
-      const allPassed = schedule.every((s) => now > s.end);
-      const allUpcoming = schedule.every((s) => now < s.start);
+    if (schedule && schedule.length > 0) {
+      const allPassed = schedule.every((s) => s.end && now > s.end.trim());
+      const allUpcoming = schedule.every((s) => s.start && now < s.start.trim());
       if (allPassed) message = 'Semua sesi absen hari ini sudah ditutup';
       else if (allUpcoming) message = 'Sesi absen belum dibuka';
       else message = 'Saat ini di luar jam sesi absen';
