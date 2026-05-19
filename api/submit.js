@@ -69,7 +69,14 @@ module.exports = async function handler(req, res) {
       Number(lat), Number(lng), schoolLat, schoolLng, radius
     );
 
-    const statusLokasi = inRadius ? '✅ Dalam radius' : '❌ Luar radius';
+    if (!inRadius) {
+      return res.status(403).json({
+        success: false,
+        error: `Anda berada di luar jangkauan absensi (${distance}m). Silakan mendekat ke lokasi sekolah.`
+      });
+    }
+
+    const statusLokasi = '✅ Dalam radius';
     const sesiLabel = `${session.start}-${session.end}`;
     const tanggal = getWIBDate();
     const jam = getWIBTime();

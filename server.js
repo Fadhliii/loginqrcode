@@ -146,7 +146,16 @@ const server = http.createServer((req, res) => {
       const lng = data.lng !== undefined ? Number(data.lng) : schoolLng;
 
       const { inRadius, distance } = checkRadius(lat, lng, schoolLat, schoolLng, mockRadius);
-      const statusLokasi = inRadius ? '✅ Dalam radius' : '❌ Luar radius';
+      if (!inRadius) {
+        res.writeHead(403, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({
+          success: false,
+          error: `Anda berada di luar jangkauan absensi (${distance}m). Silakan mendekat ke lokasi sekolah.`
+        }));
+        return;
+      }
+
+      const statusLokasi = '✅ Dalam radius';
 
       const now = new Date();
       const jam = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false });
