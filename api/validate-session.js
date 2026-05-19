@@ -9,9 +9,31 @@ module.exports = async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const session = await getActiveSession();
     const schedule = await getSchedule();
     const now = getWIBTime();
+    const serverUTC = new Date().toISOString();
+
+    /* Debug logging untuk Vercel Logs */
+    console.log('[validate-session] DEBUG:', JSON.stringify({
+      serverUTC,
+      nowWIB: now,
+      scheduleRaw: schedule,
+      scheduleType: typeof schedule,
+      isArray: Array.isArray(schedule),
+      scheduleLength: schedule ? schedule.length : 0,
+      items: Array.isArray(schedule) ? schedule.map((s, i) => ({
+        index: i,
+        start: s.start,
+        end: s.end,
+        startType: typeof s.start,
+        endType: typeof s.end,
+        nowGteStart: now >= s.start,
+        nowLteEnd: now <= s.end,
+        isActive: now >= s.start && now <= s.end,
+      })) : 'NOT_ARRAY',
+    }));
+
+    const session = await getActiveSession();
 
     if (session) {
       return res.status(200).json({
@@ -21,6 +43,7 @@ module.exports = async function handler(req, res) {
           session,
           currentTime: now,
           message: `Sesi absen aktif: ${session.start} - ${session.end}`,
+          _debug: { serverUTC, nowWIB: now, scheduleCount: schedule.length },
         },
       });
     }
@@ -37,9 +60,22 @@ module.exports = async function handler(req, res) {
 
     return res.status(200).json({
       success: true,
-      data: { active: false, session: null, currentTime: now, message },
+      data: {
+        active: false,
+        session: null,
+        currentTime: now,
+        message,
+        _debug: {
+          serverUTC,
+          nowWIB: now,
+          scheduleFromKV: schedule,
+          scheduleType: typeof schedule,
+          isArray: Array.isArray(schedule),
+        },
+      },
     });
   } catch (err) {
+    console.error('[validate-session] ERROR:', err.message, err.stack);
     return res.status(500).json({
       success: false,
       error: `[validate-session.js] ${err.message}`,

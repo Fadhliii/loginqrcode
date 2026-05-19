@@ -16,8 +16,11 @@ module.exports = async function handler(req, res) {
   try {
     const { adminkey, sessions } = req.body || {};
 
+    console.log('[set-schedule] Received:', JSON.stringify({ adminkey: adminkey ? '***' : 'EMPTY', sessions }));
+
     /* Validasi admin key */
     if (!validateAdminKey(adminkey)) {
+      console.log('[set-schedule] Admin key INVALID');
       return res.status(403).json({ success: false, error: 'Admin key tidak valid' });
     }
 
@@ -38,13 +41,16 @@ module.exports = async function handler(req, res) {
       }
     }
 
+    console.log('[set-schedule] Saving to KV:', JSON.stringify(sessions));
     await setSchedule(sessions);
+    console.log('[set-schedule] Save SUCCESS');
 
     return res.status(200).json({
       success: true,
       data: { sessions, message: 'Jadwal sesi berhasil disimpan' },
     });
   } catch (err) {
+    console.error('[set-schedule] ERROR:', err.message, err.stack);
     return res.status(500).json({
       success: false,
       error: `[set-schedule.js] ${err.message}`,
