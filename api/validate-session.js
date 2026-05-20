@@ -13,8 +13,7 @@ module.exports = async function handler(req, res) {
     const schedule = await getSchedule();
     
     // Fix timezone menggunakan manual UTC+7 sesuai permintaan
-    const nowUTC = new Date();
-    const nowWIB = new Date(nowUTC.getTime() + (7 * 60 * 60 * 1000));
+    const nowWIB = new Date(Date.now() + 7 * 60 * 60 * 1000);
     const jamSekarang = 
       nowWIB.getUTCHours().toString().padStart(2, "0") + ":" + 
       nowWIB.getUTCMinutes().toString().padStart(2, "0");
