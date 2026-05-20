@@ -22,6 +22,15 @@ module.exports = async function handler(req, res) {
       now.getHours().toString().padStart(2, "0") + ":" + 
       now.getMinutes().toString().padStart(2, "0");
 
+    // Fallback jika KV kosong/error
+    if (!schedule || schedule.length === 0) {
+      console.log("KV kosong atau error - tidak ada jadwal");
+      return res.status(200).json({ 
+        success: true, 
+        data: { active: false, session: null, currentTime: jamSekarang, message: "Belum ada jadwal" } 
+      });
+    }
+
     let aktif = false;
     let session = null;
     
@@ -36,7 +45,7 @@ module.exports = async function handler(req, res) {
     }
 
     // Console log sesuai permintaan untuk debug Vercel Logs
-    console.log("Jam WIB sekarang:", jamSekarang);
+    console.log("Jam WIB:", jamSekarang);
     console.log("Jadwal dari KV:", JSON.stringify(schedule));
     console.log("Status aktif:", aktif);
 

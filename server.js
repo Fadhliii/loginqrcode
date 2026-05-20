@@ -9,6 +9,11 @@ const fs = require('fs');
 const path = require('path');
 const { checkRadius } = require('./lib/geo');
 
+if (process.env.VERCEL) {
+  console.log("Running in Vercel environment. Exiting legacy server.js.");
+  process.exit(0);
+}
+
 const PORT = 3000;
 
 /* In-memory Mock Database */
