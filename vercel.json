@@ -4,6 +4,10 @@
   "outputDirectory": ".",
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/public/(.*)", "destination": "/public/$1" },
+    { "source": "/style.css", "destination": "/public/style.css" },
+    { "source": "/student.js", "destination": "/public/student.js" },
+    { "source": "/admin.js", "destination": "/public/admin.js" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
