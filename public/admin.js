@@ -149,12 +149,30 @@ async function loadTodayAttendance() {
   } catch (err) { tbody.innerHTML = '<tr><td colspan="4">Gagal memuat data</td></tr>'; }
 }
 
+/** Muat konfigurasi spreadsheet */
+async function loadConfig() {
+  try {
+    const res = await fetch(`/api/get-config?adminkey=${ADMIN_KEY}`);
+    const json = await res.json();
+    if (json.success) {
+      const link = document.getElementById('spreadsheet-link');
+      if (link) {
+        link.href = json.spreadsheetUrl;
+        link.classList.remove('hidden');
+      }
+    }
+  } catch (err) {
+    console.error('[admin.js] Gagal muat config:', err);
+  }
+}
+
 /** Inisialisasi halaman admin */
 function initAdmin() {
   getAdminKey();
   initQRCode();
   loadSchedule();
   loadTodayAttendance();
+  loadConfig();
   document.getElementById('btn-add-session').addEventListener('click', addSession);
   document.getElementById('btn-save-radius').addEventListener('click', saveRadius);
   document.getElementById('btn-download-qr').addEventListener('click', downloadQR);

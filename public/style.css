@@ -149,6 +149,12 @@ body {
   margin-bottom: 16px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
 /* --- Admin Grid --- */
 .admin-grid {
   display: grid;
@@ -276,6 +282,17 @@ body {
 .btn-outline:hover {
   background: var(--bg-body);
   border-color: #D1D5DB;
+}
+
+.btn-outline-success {
+  background: white;
+  border-color: var(--success);
+  color: var(--success);
+  text-decoration: none;
+}
+.btn-outline-success:hover {
+  background: var(--success-bg);
+  color: #166534;
 }
 
 .btn-danger {
