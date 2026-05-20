@@ -12,15 +12,12 @@ module.exports = async function handler(req, res) {
   try {
     const schedule = await getSchedule();
     
-    // Fix timezone sesuai permintaan user
-    const now = new Date(
-      new Date().toLocaleString("en-US", { 
-        timeZone: "Asia/Jakarta" 
-      })
-    );
+    // Fix timezone menggunakan manual UTC+7 sesuai permintaan
+    const nowUTC = new Date();
+    const nowWIB = new Date(nowUTC.getTime() + (7 * 60 * 60 * 1000));
     const jamSekarang = 
-      now.getHours().toString().padStart(2, "0") + ":" + 
-      now.getMinutes().toString().padStart(2, "0");
+      nowWIB.getUTCHours().toString().padStart(2, "0") + ":" + 
+      nowWIB.getUTCMinutes().toString().padStart(2, "0");
 
     // Fallback jika KV kosong/error
     if (!schedule || schedule.length === 0) {
@@ -79,11 +76,11 @@ module.exports = async function handler(req, res) {
       data: {
         active: false,
         session: null,
-        currentTime: now,
+        currentTime: jamSekarang,
         message,
         _debug: {
           serverUTC,
-          nowWIB: now,
+          nowWIB: jamSekarang,
           scheduleFromKV: schedule,
           scheduleType: typeof schedule,
           isArray: Array.isArray(schedule),
