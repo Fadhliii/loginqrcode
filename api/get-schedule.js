@@ -6,6 +6,7 @@
 const { getSchedule } = require('../lib/kv');
 
 module.exports = async function handler(req, res) {
+  console.log("[get-schedule.js] dipanggil");
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {

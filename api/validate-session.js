@@ -6,46 +6,51 @@
 const { getActiveSession, getSchedule, getWIBTime } = require('../lib/kv');
 
 module.exports = async function handler(req, res) {
+  console.log("[validate-session.js] dipanggil");
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
     const schedule = await getSchedule();
-    const now = getWIBTime();
+    
+    // Fix timezone sesuai permintaan user
+    const now = new Date(
+      new Date().toLocaleString("en-US", { 
+        timeZone: "Asia/Jakarta" 
+      })
+    );
+    const jamSekarang = 
+      now.getHours().toString().padStart(2, "0") + ":" + 
+      now.getMinutes().toString().padStart(2, "0");
+
+    let aktif = false;
+    let session = null;
+    
+    if (Array.isArray(schedule)) {
+      schedule.forEach(sesi => {
+        // Menggunakan sesi.start dan sesi.end karena struktur datanya demikian
+        if (sesi.start && sesi.end && jamSekarang >= sesi.start.trim() && jamSekarang <= sesi.end.trim()) {
+          aktif = true;
+          session = sesi;
+        }
+      });
+    }
+
+    // Console log sesuai permintaan untuk debug Vercel Logs
+    console.log("Jam WIB sekarang:", jamSekarang);
+    console.log("Jadwal dari KV:", JSON.stringify(schedule));
+    console.log("Status aktif:", aktif);
+
     const serverUTC = new Date().toISOString();
 
-    /* Debug logging untuk Vercel Logs */
-    console.log("Jadwal dari KV:", JSON.stringify(schedule));
-    console.log("Jam sekarang WIB:", now);
-    console.log('[validate-session] DEBUG:', JSON.stringify({
-      serverUTC,
-      nowWIB: now,
-      scheduleRaw: schedule,
-      scheduleType: typeof schedule,
-      isArray: Array.isArray(schedule),
-      scheduleLength: schedule ? schedule.length : 0,
-      items: Array.isArray(schedule) ? schedule.map((s, i) => ({
-        index: i,
-        start: s.start,
-        end: s.end,
-        startType: typeof s.start,
-        endType: typeof s.end,
-        nowGteStart: now >= s.start,
-        nowLteEnd: now <= s.end,
-        isActive: now >= s.start && now <= s.end,
-      })) : 'NOT_ARRAY',
-    }));
-
-    const session = await getActiveSession();
-
-    if (session) {
+    if (aktif && session) {
       return res.status(200).json({
         success: true,
         data: {
           active: true,
           session,
-          currentTime: now,
+          currentTime: jamSekarang,
           message: `Sesi absen aktif: ${session.start} - ${session.end}`,
-          _debug: { serverUTC, nowWIB: now, scheduleCount: schedule.length },
+          _debug: { serverUTC, nowWIB: jamSekarang, scheduleCount: schedule.length },
         },
       });
     }
@@ -53,8 +58,8 @@ module.exports = async function handler(req, res) {
     /* Tentukan pesan berdasarkan posisi waktu terhadap jadwal */
     let message = 'Tidak ada jadwal sesi absen hari ini';
     if (schedule && schedule.length > 0) {
-      const allPassed = schedule.every((s) => s.end && now > s.end.trim());
-      const allUpcoming = schedule.every((s) => s.start && now < s.start.trim());
+      const allPassed = schedule.every((s) => s.end && jamSekarang > s.end.trim());
+      const allUpcoming = schedule.every((s) => s.start && jamSekarang < s.start.trim());
       if (allPassed) message = 'Semua sesi absen hari ini sudah ditutup';
       else if (allUpcoming) message = 'Sesi absen belum dibuka';
       else message = 'Saat ini di luar jam sesi absen';

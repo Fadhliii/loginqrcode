@@ -17,6 +17,7 @@ const { checkRadius } = require('../lib/geo');
 const { appendRow } = require('../lib/sheets');
 
 module.exports = async function handler(req, res) {
+  console.log("[submit.js] dipanggil");
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });

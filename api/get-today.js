@@ -8,6 +8,7 @@ const { getTodayRows } = require('../lib/sheets');
 const { getWIBDate } = require('../lib/kv');
 
 module.exports = async function handler(req, res) {
+  console.log("[get-today.js] dipanggil");
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {

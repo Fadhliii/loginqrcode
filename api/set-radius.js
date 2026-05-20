@@ -8,6 +8,7 @@ const { validateAdminKey } = require('../lib/auth');
 const { setRadius } = require('../lib/kv');
 
 module.exports = async function handler(req, res) {
+  console.log("[set-radius.js] dipanggil");
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, error: 'Method not allowed' });
